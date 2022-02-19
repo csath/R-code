@@ -59,9 +59,9 @@ summary(wineData)
 #plot different digrams to visualize data
 plot(wineData)
 
-plot(wineDataCleaned[,2:4])
+plot(wineDataCleaned[,1:3])
 
-
+# clustering
 kc = kmeans(wineDataCleaned[,2:4], 2)
 kc
 
@@ -74,9 +74,11 @@ points(kc$centers[,2:3], col=1:2, pch=8, cex=2)
 par(mfrow=c(1, 2))
 plot(wineDataCleaned[1], type="o", col="blue")
 hist(wineDataCleaned[1], xlim=c(0,7), breaks=10, col="green")
-table(wineDataCleaned[1]) 
 
 
+
+
+# do heirarchicle clustering
 
 # use euclidean distance method for clustering
 dis = dist(wineDataCleaned[2:4], method="euclidean") 
@@ -89,28 +91,3 @@ rect.hclust(hcwineAve, k=2, border="green")
 hcwineAveCut = cutree(hcwineAve, 2)
 hcwineAveCut #List cluster membership
 
-#iris data set 
-dis = dist(iris[1:4], method="euclidean")
-hcIrisAve = hclust(dis, method="ave")
-plot(hcIrisAve, hang=-1, labels=iris$Species, cex.main = 0.75, cex.axis = 0.5)
-rect.hclust(hcIrisAve, k=3, border="blue")
-
-hcIrisAveCut = cutree(hcIrisAve, k=3)
-table(iris$Species, hcIrisAveCut)
-
-par(mfcol=c(1,2))
-plot(iris[,1:2], col=hcIrisAveCut, cex.main = 0.75)
-plot(iris[,3:4], col=hcIrisAveCut, cex.main = 0.75)
-
-# use wards method for clustering
-hcIrisWard = hclust(dis, method="ward.D")
-plot(hcIrisWard, hang=-1, labels=iris$Species, cex.main = 0.75, cex.axis = 0.5)
-rect.hclust(hcIrisWard, k=3, border="red") 
-
-
-hcIrisWardCut = cutree(hcIrisWard, k=3)
-table(iris$Species, hcIrisWardCut)
-
-par(mfcol=c(1,2))
-plot(iris[,1:2], col=hcIrisWardCut, cex.main = 0.75)
-plot(iris[,3:4], col=hcIrisWardCut, cex.main = 0.75)
