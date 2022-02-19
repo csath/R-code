@@ -61,16 +61,20 @@ plot(wineData)
 
 plot(wineDataCleaned[,1:3])
 
-# clustering
-kc = kmeans(wineDataCleaned[,2:4], 2)
-kc
-
 par(mfrow=c(1, 2))
-plot(wineDataCleaned[,2:3], col=kc$cluster)
+plot(wineDataCleaned[1], wineDataCleaned[2], col="blue", cex.axis = 0.5)
+
+# clustering
+kc = kmeans(wineDataCleaned[,1:3], 2)
+kc
+par(mfrow=c(1, 2))
+plot(wineDataCleaned[,1:2], col=kc$cluster)
 points(kc$centers[,1:2], col=1:2, pch=8, cex=2)
-plot(wineDataCleaned[,3:4], col=kc$cluster)
+plot(wineDataCleaned[,2:3], col=kc$cluster)
 points(kc$centers[,2:3], col=1:2, pch=8, cex=2)
 
+
+#
 par(mfrow=c(1, 2))
 plot(wineDataCleaned[1], type="o", col="blue")
 hist(wineDataCleaned[1], xlim=c(0,7), breaks=10, col="green")
