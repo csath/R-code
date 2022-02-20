@@ -91,61 +91,34 @@ boxplot(wineDataCleanedAndScaled)
 #K-means clustering
 km <- kmeans(wineDataCleanedAndScaled, 3)
 km
-
-par(mfrow=c(1,1))
-plot(wineDataCleanedAndScaled, col=km$cluster)
-points(km$centers, col=1:2, pch=8, cex=2)
-
+plot(wineDataCleanedAndScaled, col=km$cluster+1, main="K-means")
 table(wineDataOutlierCleanedBeforeScaling$Type, km$cluster)
 
-#db scan clustering
-set.seed(220)  # Setting seed
-kNNdistplot(wineDataCleanedAndScaled, k = 3)
-
-wineDataCleanedAndScaled
-Dbscan_cl <- dbscan(wineDataCleanedAndScaled, eps = 0.45, MinPts = 5)
-Dbscan_cl
-
-Dbscan_cl$cluster
-
-plot(Dbscan_cl, wineDataCleanedAndScaled, main = "DBScan")
-plot(Dbscan_cl, wineDataCleanedAndScaled, main = "Petal Width vs Sepal Length")
-
-
-# Visualize the clusters
-fviz_cluster(km, data = wineDataCleanedAndScaled)
-
-par(mfrow=c(1, 2))
-plot(wineDataCleaned[1], wineDataCleaned[2], col="blue", cex.axis = 0.5)
-
-# clustering
-kc = kmeans(wineDataCleaned[,1:3], 2)
-kc
-par(mfrow=c(1, 2))
-plot(wineDataCleaned[,1:2], col=kc$cluster)
-points(kc$centers[,1:2], col=1:2, pch=8, cex=2)
-plot(wineDataCleaned[,2:3], col=kc$cluster)
-points(kc$centers[,2:3], col=1:2, pch=8, cex=2)
-
-
-#
-par(mfrow=c(1, 2))
-plot(wineDataCleaned[1], type="o", col="blue")
-hist(wineDataCleaned[1], xlim=c(0,7), breaks=10, col="green")
-
-
-
-
 # do heirarchicle clustering
-
 # use euclidean distance method for clustering
-dis = dist(wineDataCleaned[2:4], method="euclidean") 
+dis = dist(wineDataCleanedAndScaled, method="euclidean") 
 hcwineAve = hclust(dis, method="ave") #Group average as similarity measure
-par(mfcol=c(1,2))
+par(mfcol=c(1,1))
 plot(hcwineAve, hang=-1, cex.main = 0.75, cex.axis = 0.5)
-rect.hclust(hcwineAve, k=2, border="green")
+rect.hclust(hcwineAve, k=3, border="green")
 
 # Cut the tree down since distance is too much
-hcwineAveCut = cutree(hcwineAve, 2)
+hcwineAveCut = cutree(hcwineAve, 3)
 hcwineAveCut #List cluster membership
+
+table(wineDataOutlierCleanedBeforeScaling$Type, hcwineAveCut)
+
+
+#do db scan clustering
+set.seed(123456789)  # Setting seed
+kNNdistplot(wineDataCleanedAndScaled, k = 30)
+abline(h=4.35, col = "red", lty=2)
+
+Dbscan_cl <- dbscan(wineDataOutlierCleanedBeforeScaling, eps = 4.35, MinPts = 30)
+Dbscan_cl
+Dbscan_cl$cluster
+
+plot(wineDataCleanedAndScaled, col=Dbscan_cl$cluster+1, main="DBSCAN")
+
+
 
