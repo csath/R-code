@@ -1,65 +1,119 @@
-#load data
-wineData = read.csv("wine.csv", header = FALSE)
-wineNames = read.csv("wine-names.csv", header = FALSE)
+####### DATA LOADING ######
+############################
+library(purrr)
+library(tidyr)
+library(ggplot2)
+library(plyr)
+library(factoextra)
+library(fpc)
+library(dbscan)
+
+wineDataOrg = read.csv("wine.csv", header = FALSE)
+#rename column names for better readability
+names(wineDataOrg)[1] <- 'Type'
+names(wineDataOrg)[2] <- 'Alcohol'
+names(wineDataOrg)[3] <- 'Malic acid'
+names(wineDataOrg)[4] <- 'Ash'
+names(wineDataOrg)[5] <- 'Alcalinity of ash'
+names(wineDataOrg)[6] <- 'Magnesium'
+names(wineDataOrg)[7] <- 'Total phenols'
+names(wineDataOrg)[8] <- 'Flavanoids'
+names(wineDataOrg)[9] <- 'Nonflavanoid phenols'
+names(wineDataOrg)[10] <- 'Proanthocyanins'
+names(wineDataOrg)[11] <- 'Color intensity'
+names(wineDataOrg)[12] <- 'Hue'
+names(wineDataOrg)[13] <- 'OD280/OD315 of diluted wines'
+names(wineDataOrg)[14] <- 'Proline'
+
+wineData <- wineDataOrg
 
 #check number of rows and number of columns
 nrow(wineData)
 ncol(wineData) 
 
-#remove first column
-head(wineData)
-#V1 is the first column
-wineData$V1 <- NULL 
-#verify if the first column is removed
-head(wineData)
+#now have a look at original data
+summary(wineData)
+plot(wineData)
+wineData %>%
+  keep(is.numeric) %>%
+  gather() %>%
+  ggplot(aes(value)) +
+  facet_wrap(~ key, scales = "free") +
+  geom_histogram()
 
-#rename column names for better readability
-names(wineData)[1] <- 'Alcohol'
-names(wineData)[2] <- 'Malic acid'
-names(wineData)[3] <- 'Ash'
-names(wineData)[4] <- 'Alcalinity of ash'
-names(wineData)[5] <- 'Magnesium'
-names(wineData)[6] <- 'Total phenols'
-names(wineData)[7] <- 'Flavanoids'
-names(wineData)[8] <- 'Nonflavanoid phenols'
-names(wineData)[9] <- 'Proanthocyanins'
-names(wineData)[10] <- 'Color intensity'
-names(wineData)[11] <- 'Hue'
-names(wineData)[12] <- 'OD280/OD315 of diluted wines'
-names(wineData)[13] <- 'Proline'
+
+####### DATA CLEANING ######
+############################
 
 #remove rows if data is null
 wineDataCleaned = wineData[rowSums(is.na(wineData)) == 0,]
-nrow(wineData)
-nrow(wineDataCleaned)
-#there are no missing values
 
-#check max values and remove is anything seesm suspisious
-max(wineDataCleaned[1])
-max(wineDataCleaned[2])
-max(wineDataCleaned[3])
-max(wineDataCleaned[4])
-max(wineDataCleaned[5])
-max(wineDataCleaned[6])
-max(wineDataCleaned[7])
-max(wineDataCleaned[8])
-max(wineDataCleaned[9])
-max(wineDataCleaned[10])
-max(wineDataCleaned[11])
-max(wineDataCleaned[12])
-max(wineDataCleaned[13])
+#remove duplicate rows if available
+unique(wineDataCleaned)
 
-#max hue and proline value seems to be invalid, so remove them
-wineDataCleaned = wineDataCleaned[wineDataCleaned$Hue < 1.71,]
-wineDataCleaned = wineDataCleaned[wineDataCleaned$Proline < 1680,]
-nrow(wineDataCleaned)
+#remove outliers
+#first check if any outliers available using boxplot
+boxplot(wineDataCleaned)
 
-#Check the data summary
-summary(wineData)
-#plot different digrams to visualize data
-plot(wineData)
+#when plottng the box plot you can see there are outliers in 2,3,4,5,9,10,11 columns, let's remove them
+#wineDataOutlierCleaned <- wineDataCleaned
+#wineDataOutlierCleaned <- wineDataOutlierCleaned[-which(wineDataOutlierCleaned[,2] %in% boxplot.stats(wineDataOutlierCleaned[,2])$out),]
+#wineDataOutlierCleaned <- wineDataOutlierCleaned[-which(wineDataOutlierCleaned[,3] %in% boxplot.stats(wineDataOutlierCleaned[,3])$out),]
+#wineDataOutlierCleaned <- wineDataOutlierCleaned[-which(wineDataOutlierCleaned[,4] %in% boxplot.stats(wineDataOutlierCleaned[,4])$out),]
+#wineDataOutlierCleaned <- wineDataOutlierCleaned[-which(wineDataOutlierCleaned[,5] %in% boxplot.stats(wineDataOutlierCleaned[,5])$out),]
+#wineDataOutlierCleaned <- wineDataOutlierCleaned[-which(wineDataOutlierCleaned[,9] %in% boxplot.stats(wineDataOutlierCleaned[,9])$out),]
+#wineDataOutlierCleaned <- wineDataOutlierCleaned[-which(wineDataOutlierCleaned[,10] %in% boxplot.stats(wineDataOutlierCleaned[,10])$out),]
+#wineDataOutlierCleaned <- wineDataOutlierCleaned[-which(wineDataOutlierCleaned[,11] %in% boxplot.stats(wineDataOutlierCleaned[,11])$out),]
+#boxplot(wineDataOutlierCleaned)
 
-plot(wineDataCleaned[,1:3])
+#find absolute value of z-score for each value in each column
+z_scores <- as.data.frame(sapply(wineDataCleaned, function(wineDataCleaned)
+  (abs(wineDataCleaned-mean(wineDataCleaned))/sd(wineDataCleaned))))
+head(z_scores)
+#only keep rows in dataframe with all z-scores less than absolute value of 3
+wineDataOutlierCleaned <- wineDataCleaned[!rowSums(z_scores > 3), ]
+dim(wineDataOutlierCleaned)
+
+
+####### REMOVE FIRST COLUMN ######
+############################
+wineDataOutlierCleanedBeforeScaling <- wineDataOutlierCleaned
+#remove first column before scaling
+wineDataOutlierCleaned$Type <- NULL
+
+# Scaling the dataset
+wineDataCleanedAndScaled <- scale(wineDataOutlierCleaned[-1])
+
+# plot the data again
+boxplot(wineDataCleanedAndScaled)
+
+
+#K-means clustering
+km <- kmeans(wineDataCleanedAndScaled, 3)
+km
+
+par(mfrow=c(1,1))
+plot(wineDataCleanedAndScaled, col=km$cluster)
+points(km$centers, col=1:2, pch=8, cex=2)
+
+table(wineDataOutlierCleanedBeforeScaling$Type, km$cluster)
+
+#db scan clustering
+set.seed(220)  # Setting seed
+kNNdistplot(wineDataCleanedAndScaled, k = 3)
+
+wineDataCleanedAndScaled
+Dbscan_cl <- dbscan(wineDataCleanedAndScaled, eps = 0.45, MinPts = 5)
+Dbscan_cl
+
+Dbscan_cl$cluster
+
+plot(Dbscan_cl, wineDataCleanedAndScaled, main = "DBScan")
+plot(Dbscan_cl, wineDataCleanedAndScaled, main = "Petal Width vs Sepal Length")
+
+
+# Visualize the clusters
+fviz_cluster(km, data = wineDataCleanedAndScaled)
 
 par(mfrow=c(1, 2))
 plot(wineDataCleaned[1], wineDataCleaned[2], col="blue", cex.axis = 0.5)
